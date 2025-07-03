@@ -1,0 +1,47 @@
+{
+  "name": "emailtester",
+  "displayName": "emailTester",
+  "description": "Email template preview and testing tool",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:emailtester.previewEmails"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "emailtester.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "emailtester.previewEmails",
+        "title": "Email Tester: Preview Email Templates"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "@vscode/test-electron": "^2.3.8"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "node-fetch": "^2.7.0"
+  }
+}
