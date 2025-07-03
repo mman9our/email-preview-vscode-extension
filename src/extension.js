@@ -1,26 +1,12 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
 const path = require('path');
 const fs = require('fs');
 const fetch = require('node-fetch');
-
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-
-    let disposable = vscode.commands.registerCommand('emailtester.helloWorld', function () {
-        // The code you place here will be executed every time your command is executed
-
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World from emailTester!');
-    });
-
-    let disposable2 = vscode.commands.registerCommand('emailtester.previewEmails', () => {
+    let disposable = vscode.commands.registerCommand('emailtester.previewEmails', () => {
         const panel = vscode.window.createWebviewPanel(
             'emailPreview',
             'Email Template Preview',
@@ -31,7 +17,6 @@ function activate(context) {
         );
 
         panel.webview.html = getWebviewContent();
-
         panel.webview.onDidReceiveMessage(
             async message => {
                 switch (message.command) {
@@ -46,15 +31,13 @@ function activate(context) {
                                 });
                                 return;
                             }
-
                             // Read directory contents directly using fs
                             const files = fs.readdirSync(directory)
-                                .filter(file => file.endsWith('.cshtml') || file.endsWith('.html') || file.endsWith('.htm'))
+                                .filter(file => file.endsWith('.cshtml'))
                                 .map(file => ({
                                     name: file,
                                     path: path.join(directory, file)
                                 }));
-
                             panel.webview.postMessage({
                                 command: 'emailsLoaded',
                                 emails: files.map(f => f.name)
@@ -69,16 +52,12 @@ function activate(context) {
 
                     case 'previewEmail':
                         try {
-                            const filePath = path.join(message.directory, message.emailName);
                             const isLocal = true;
                             const emailsDirectory = message.directory;
                             // Remove .cshtml extension if present
                             const email = message.emailName.replace('.cshtml', '');
-
-
                             // Make API call to fetch email content
                             const apiUrl = 'http://localhost:3000/api/v1/EmailTester/PublishSendEamil';
-                            
                             // Construct URL manually to avoid encoding backslashes
                             const fullUrl = `${apiUrl}?readFromLocalDirectory=${isLocal}&directory=${emailsDirectory}&templateName=${email}&sendEmail=true`;
                             
@@ -123,10 +102,9 @@ function activate(context) {
     });
 
     context.subscriptions.push(disposable);
-    context.subscriptions.push(disposable2);
 }
 
-function getWebviewContent() {
+export function getWebviewContent() {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -622,7 +600,6 @@ function getWebviewContent() {
     </html>`;
 }
 
-// This method is called when your extension is deactivated
 function deactivate() {}
 
 module.exports = {
