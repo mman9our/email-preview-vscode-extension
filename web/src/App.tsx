@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
-import {
-  VSCodeDivider,
-  VSCodeProgressRing,
-} from "@vscode/webview-ui-toolkit/react";
+import AppHeader from "./components/AppHeader";
+import DirectoryInput from "./components/DirectoryInput";
+import ErrorMessage from "./components/ErrorMessage";
+import EmailList from "./components/EmailList";
+import EmailPreview from "./components/EmailPreview";
 
 declare const acquireVsCodeApi: () => any;
 const vscode = acquireVsCodeApi();
@@ -15,42 +16,6 @@ function App() {
   const [previewContent, setPreviewContent] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      switch (message.command) {
-        case "emailsLoaded":
-          setEmails(message.emails);
-          setIsLoading(false);
-          setError("");
-          break;
-        case "emailContent":
-          setPreviewContent(message.content);
-          setIsLoading(false);
-          setError("");
-          break;
-        case "error":
-          setError(message.message);
-          setIsLoading(false);
-          break;
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-
-    // Auto-focus on directory input field when component loads
-    setTimeout(() => {
-      const inputElement = document.querySelector(".directory-input input");
-      if (inputElement instanceof HTMLElement) {
-        inputElement.focus();
-      }
-    }, 100);
-
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
-  }, []);
 
   const handleDirectoryChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -86,121 +51,59 @@ function App() {
     }
   };
 
+  const handleMessage = (event: MessageEvent) => {
+    const message = event.data;
+    switch (message.command) {
+      case "emailsLoaded":
+        setEmails(message.emails);
+        setIsLoading(false);
+        setError("");
+        break;
+      case "emailContent":
+        setPreviewContent(message.content);
+        setIsLoading(false);
+        setError("");
+        break;
+      case "error":
+        setError(message.message);
+        setIsLoading(false);
+        break;
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
   return (
     <div className="email-preview-container">
-      <div className="app-header">
-        <span
-          role="img"
-          aria-label="Email icon"
-          style={{ marginRight: "10px", fontSize: "24px" }}
-        >
-          📧
-        </span>
-        <h1 className="app-title">Email Template Tester</h1>
-        <div className="tooltip">
-          <div className="tooltip-icon">?</div>
-          <span className="tooltip-text">
-            Enter a directory path containing HTML email templates, then click
-            "Load Emails" to preview and test them.
-          </span>
-        </div>
-      </div>
-      <VSCodeDivider />
-      <div className="directory-input">
-        <input
-          type="text"
-          value={directory}
-          onChange={handleDirectoryChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Enter email templates directory path"
-        />
-        <button onClick={loadEmails} disabled={isLoading}>
-          {isLoading ? (
-            <span>
-              <span className="loader-small"></span>
-              Loading...
-            </span>
-          ) : (
-            "Load Emails"
-          )}
-        </button>
-      </div>
+      <AppHeader />
 
-      {error && <div className="error-message">{error}</div>}
+      <DirectoryInput
+        directory={directory}
+        isLoading={isLoading}
+        onChange={handleDirectoryChange}
+        onKeyDown={handleKeyDown}
+        onLoadClick={loadEmails}
+      />
+
+      <ErrorMessage message={error} />
 
       <div className="panel-container">
-        <div className="sidebar">
-          <div className="panel-header">Email Templates</div>
-          <div className="email-list">
-            {emails.length > 0 ? (
-              emails.map((email, index) => (
-                <div
-                  key={index}
-                  className={`email-item ${
-                    selectedEmail === email ? "selected" : ""
-                  }`}
-                  onClick={() => previewEmail(email)}
-                >
-                  <span className="email-name">
-                    {email
-                      .replace(".cshtml", "")
-                      .replace(".html", "")
-                      .replace(".htm", "")}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <div className="empty-state-icon">📁</div>
-                <div className="empty-state-text">
-                  No email templates found. Please enter a valid directory path
-                  and click "Load Emails".
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <EmailList
+          emails={emails}
+          selectedEmail={selectedEmail}
+          onEmailSelect={previewEmail}
+        />
 
-        <div className="preview-container">
-          <div className="panel-header">
-            {selectedEmail
-              ? "Preview: " +
-                selectedEmail
-                  .replace(".cshtml", "")
-                  .replace(".html", "")
-                  .replace(".htm", "")
-              : "Email Preview"}
-          </div>
-          <div className="preview-panel">
-            {isLoading && (
-              <div className="loading">
-                <VSCodeProgressRing />
-              </div>
-            )}
-
-            {!isLoading && previewContent ? (
-              <iframe
-                srcDoc={previewContent}
-                title="Email Preview"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                sandbox="allow-scripts allow-same-origin allow-popups"
-              />
-            ) : (
-              !isLoading &&
-              !previewContent && (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📧</div>
-                  <div className="empty-state-text">
-                    Select an email template from the list to preview its
-                    content.
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        </div>
+        <EmailPreview
+          selectedEmail={selectedEmail}
+          previewContent={previewContent}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

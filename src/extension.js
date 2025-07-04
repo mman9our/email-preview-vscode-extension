@@ -2,6 +2,7 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const fetch = require("node-fetch");
+
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -19,6 +20,7 @@ function activate(context) {
       );
 
       panel.webview.html = getWebviewContent(context, panel);
+
       panel.webview.onDidReceiveMessage(
         async (message) => {
           switch (message.command) {
@@ -116,11 +118,6 @@ function getWebviewContent(context, panel) {
   let cssSrc = panel.webview.asWebviewUri(
     vscode.Uri.joinPath(context.extensionUri, "web", "dist", "index.css")
   );
-  // Get URI for the email icon
-  const iconUri = panel.webview.asWebviewUri(
-    vscode.Uri.joinPath(context.extensionUri, "media", "email-icon.svg")
-  );
-
   // Render our React email preview app
   return `<!DOCTYPE html>
     <html lang="en">
@@ -128,16 +125,9 @@ function getWebviewContent(context, panel) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Email Template Preview</title>
-        <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-        <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
         <link rel="stylesheet" href="${cssSrc}" />
-        <script>
-          // Make icon URI available to the React component
-          window.iconUri = "${iconUri}";
-        </script>
     </head>
     <body>
-        <noscript>You need to enable JavaScript to run this app.</noscript>
         <div id="root"></div>
         <script src="${scriptSrc}"></script>
     </body>
