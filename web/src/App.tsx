@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
+import {
+  VSCodeDivider,
+  VSCodeProgressRing,
+} from "@vscode/webview-ui-toolkit/react";
 
 declare const acquireVsCodeApi: () => any;
 const vscode = acquireVsCodeApi();
@@ -101,6 +105,7 @@ function App() {
           </span>
         </div>
       </div>
+      <VSCodeDivider />
       <div className="directory-input">
         <input
           type="text"
@@ -169,7 +174,7 @@ function App() {
           <div className="preview-panel">
             {isLoading && (
               <div className="loading">
-                <div className="loader"></div>
+                <VSCodeProgressRing />
               </div>
             )}
 
