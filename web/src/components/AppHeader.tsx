@@ -13,7 +13,7 @@ const AppHeader: React.FC = () => {
             <h1 className="app-title">Email Template Tester</h1>
             <div className="tooltip">
                 <div className="tooltip-icon">?</div>
-                <span className="tooltip-text">Enter a directory path containing cshtml email templates, then click 'Load Emails' to preview and test them.</span>
+                <span className="tooltip-text">Enter a directory path containing cshtml email templates, then click 'Load Emails' to preview and test them</span>
             </div>
         </div>
     );
