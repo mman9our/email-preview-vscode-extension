@@ -109,14 +109,19 @@ function activate(context) {
 }
 
 function getWebviewContent(context, panel) {
-  // Get URI for the CSS and image files
-  const cssUri = panel.webview.asWebviewUri(
-    vscode.Uri.joinPath(context.extensionUri, "media", "vscode.css")
+  // Get path to the React application in the web/dist directory
+  let scriptSrc = panel.webview.asWebviewUri(
+    vscode.Uri.joinPath(context.extensionUri, "web", "dist", "index.js")
   );
+  let cssSrc = panel.webview.asWebviewUri(
+    vscode.Uri.joinPath(context.extensionUri, "web", "dist", "index.css")
+  );
+  // Get URI for the email icon
   const iconUri = panel.webview.asWebviewUri(
     vscode.Uri.joinPath(context.extensionUri, "media", "email-icon.svg")
   );
 
+  // Render our React email preview app
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -125,181 +130,16 @@ function getWebviewContent(context, panel) {
         <title>Email Template Preview</title>
         <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
         <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-        <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-        <link rel="stylesheet" href="${cssUri}">
+        <link rel="stylesheet" href="${cssSrc}" />
+        <script>
+          // Make icon URI available to the React component
+          window.iconUri = "${iconUri}";
+        </script>
     </head>
     <body>
+        <noscript>You need to enable JavaScript to run this app.</noscript>
         <div id="root"></div>
-        <script type="text/babel">
-            const vscode = acquireVsCodeApi();
-            
-            const EmailPreview = function() {
-                const [directory, setDirectory] = React.useState('');
-                const [emails, setEmails] = React.useState([]);
-                const [selectedEmail, setSelectedEmail] = React.useState(null);
-                const [previewContent, setPreviewContent] = React.useState('');
-                const [error, setError] = React.useState('');
-                const [isLoading, setIsLoading] = React.useState(false);
-
-                React.useEffect(() => {
-                    window.addEventListener('message', event => {
-                        const message = event.data;
-                        switch (message.command) {
-                            case 'emailsLoaded':
-                                setEmails(message.emails);
-                                setIsLoading(false);
-                                setError('');
-                                break;
-                            case 'emailContent':
-                                setPreviewContent(message.content);
-                                setIsLoading(false);
-                                setError('');
-                                break;
-                            case 'error':
-                                setError(message.message);
-                                setIsLoading(false);
-                                break;
-                        }
-                    });
-                    
-                    // Auto-focus on directory input field when component loads
-                    setTimeout(() => {
-                        const inputElement = document.querySelector('.directory-input input');
-                        if (inputElement) {
-                            inputElement.focus();
-                        }
-                    }, 100);
-                }, []);
-
-                const handleDirectoryChange = (event) => {
-                    setDirectory(event.target.value);
-                };
-
-                const loadEmails = () => {
-                    if (!directory) {
-                        setError('Please enter a directory path');
-                        return;
-                    }
-                    setIsLoading(true);
-                    vscode.postMessage({
-                        command: 'loadEmails',
-                        directory: directory
-                    });
-                };
-
-                const previewEmail = (emailName) => {
-                    setSelectedEmail(emailName);
-                    setIsLoading(true);
-                    vscode.postMessage({
-                        command: 'previewEmail',
-                        directory: directory,
-                        emailName: emailName
-                    });
-                };
-                
-                const handleKeyDown = (event) => {
-                    if (event.key === 'Enter') {
-                        loadEmails();
-                    }
-                };
-
-                return (
-                    <div className="email-preview-container">
-                        <div className="app-header">
-                            <img src="${iconUri}" alt="Email icon" width="24" height="24" style={{ marginRight: '10px' }} />
-                            <h1 className="app-title">Email Template Tester</h1>
-                            <div className="tooltip">
-                                <div className="tooltip-icon">?</div>
-                                <span className="tooltip-text">Enter a directory path containing HTML email templates, then click "Load Emails" to preview and test them.</span>
-                            </div>
-                        </div>
-                        <div className="directory-input">
-                            <input 
-                                type="text" 
-                                value={directory}
-                                onChange={handleDirectoryChange}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Enter email templates directory path"
-                            />
-                            <button onClick={loadEmails} disabled={isLoading}>
-                                {isLoading ? (
-                                    <span>
-                                        <span className="loader-small"></span>
-                                        Loading...
-                                    </span>
-                                ) : 'Load Emails'}
-                            </button>
-                        </div>
-                        
-                        {error && <div className="error-message">{error}</div>}
-                        
-                        <div className="panel-container">
-                            <div className="sidebar">
-                                <div className="panel-header">Email Templates</div>
-                                <div className="email-list">
-                                    {emails.length > 0 ? (
-                                        emails.map((email, index) => (
-                                            <div 
-                                                key={index}
-                                                className={\`email-item \${selectedEmail === email ? 'selected' : ''}\`}
-                                                onClick={() => previewEmail(email)}
-                                            >
-                                                <span className="email-name">
-                                                    {email.replace('.cshtml', '').replace('.html', '').replace('.htm', '')}
-                                                </span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="empty-state">
-                                            <div className="empty-state-icon">📁</div>
-                                            <div className="empty-state-text">
-                                                No email templates found. Please enter a valid directory path and click "Load Emails".
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            
-                            <div className="preview-container">
-                                <div className="panel-header">
-                                    {selectedEmail 
-                                        ? "Preview: " + selectedEmail.replace('.cshtml', '').replace('.html', '').replace('.htm', '') 
-                                        : "Email Preview"}
-                                </div>
-                                <div className="preview-panel">
-                                    {isLoading && (
-                                        <div className="loading">
-                                            <div className="loader"></div>
-                                        </div>
-                                    )}
-                                    
-                                    {!isLoading && previewContent ? (
-                                        <iframe
-                                            srcDoc={previewContent}
-                                            title="Email Preview"
-                                            width="100%"
-                                            height="100%"
-                                            frameBorder="0"
-                                            sandbox="allow-scripts allow-same-origin allow-popups"
-                                        />
-                                    ) : !isLoading && !previewContent && (
-                                        <div className="empty-state">
-                                            <div className="empty-state-icon">📧</div>
-                                            <div className="empty-state-text">
-                                                Select an email template from the list to preview its content.
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(React.createElement(EmailPreview));
-        </script>
+        <script src="${scriptSrc}"></script>
     </body>
     </html>`;
 }
