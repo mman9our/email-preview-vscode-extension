@@ -31,7 +31,7 @@ const EmailList: React.FC<EmailListProps> = ({
                         <div className="empty-state-icon">📁</div>
                         <div className="empty-state-text">
                             No email templates found. Please enter a valid directory path and
-                            click "Load Emails".
+                            click "Load Emails"
                         </div>
                     </div>
                 )}
