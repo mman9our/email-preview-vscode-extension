@@ -125,7 +125,7 @@ function activate(context) {
 }
 
 function getWebviewContent(context, panel) {
-  // Get path to the React application in the web/dist directory
+  // Get path to the React application in the web/dist directory.
   let scriptSrc = panel.webview.asWebviewUri(
     vscode.Uri.joinPath(context.extensionUri, "web", "dist", "index.js")
   );
