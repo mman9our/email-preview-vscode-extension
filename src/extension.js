@@ -7,6 +7,7 @@ const fetch = require("node-fetch");
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
+  const globalState = context.globalState;
   let disposable = vscode.commands.registerCommand(
     "emailtester.previewEmails",
     () => {
@@ -16,6 +17,7 @@ function activate(context) {
         vscode.ViewColumn.One,
         {
           enableScripts: true,
+          retainContextWhenHidden: true,
         }
       );
 
@@ -43,9 +45,21 @@ function activate(context) {
                     name: file,
                     path: path.join(directory, file),
                   }));
+                const emailList = files.map((f) => f.name);
+                globalState.update('lastDirectory', directory);
+                globalState.update('lastEmails', emailList);
+
+                // Save to webview state - this persists across tab switches
+                panel.webview.postMessage({
+                  command: "saveState",
+                  state: {
+                    directory: directory,
+                    emails: emailList
+                  }
+                });
                 panel.webview.postMessage({
                   command: "emailsLoaded",
-                  emails: files.map((f) => f.name),
+                  emails: emailList,
                 });
               } catch (error) {
                 panel.webview.postMessage({
@@ -134,7 +148,7 @@ function getWebviewContent(context, panel) {
     </html>`;
 }
 
-function deactivate() {}
+function deactivate() { }
 
 module.exports = {
   activate,
